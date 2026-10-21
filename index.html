@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yazboz Master Pro+ Kilitli</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #0f172a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; }
+        .header { padding: 12px; background: #1e293b; text-align: center; border-bottom: 2px solid #334155; }
+        .main-container { padding: 5px; }
+        
+        /* Ödül Puanları Üst Kısım */
+        .top-controls { background: #1e293b; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; }
+        
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th { background: #0f172a; padding: 10px 0; color: #93c5fd; font-size: 13px; border: 1px solid #334155; }
+        td { padding: 4px 1px; border: 1px solid #334155; text-align: center; vertical-align: middle; }
+        
+        .row-info { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .edit-btn { background: #475569; border: none; color: white; padding: 4px; width: 32px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .score-input { width: 94%; padding: 10px 0; border-radius: 6px; border: 2px solid transparent; background: #334155; color: white; text-align: center; font-weight: bold; font-size: 18px; outline: none; }
+        .score-input:focus { border-color: #60a5fa; background: #0f172a; }
+        .score-input.negative { background: #059669 !important; border-color: #059669; }
+        
+        .active-row { background: rgba(59, 130, 246, 0.15); }
+        .locked-row { background: rgba(0, 0, 0, 0.5) !important; opacity: 0.6; pointer-events: none; }
+        .locked-row .edit-btn { pointer-events: auto; }
+
+        /* BÜYÜTÜLMÜŞ TOPLAM SATIRI */
+        .total-row { background: #1e293b; color: #fbbf24; font-weight: 900; }
+        .total-row td { padding: 15px 0; font-size: 24px; border-top: 3px solid #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+        .total-label { font-size: 14px !important; color: #fff; }
+
+        /* SIRALAMA RENKLERİ (en az ceza = en iyi) */
+        .total-row td.rank-1 { background: #16a34a; color: #fff; text-shadow: none; }
+        .total-row td.rank-2 { background: #eab308; color: #1f2937; text-shadow: none; }
+        .total-row td.rank-3 { background: #f87171; color: #fff; text-shadow: none; }
+        .total-row td.rank-4 { background: #991b1b; color: #fff; text-shadow: none; }
+        
+        .controls-wrapper { margin-top: 10px; background: #1e293b; padding: 10px; border-radius: 12px; border: 1px solid #334155; }
+        .penalty-label { font-size: 11px; color: #94a3b8; margin-bottom: 8px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .multi-btns { display: flex; gap: 4px; }
+        .btn { flex: 1; padding: 15px 2px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 14px; }
+        
+        .btn-red { background: #dc2626; } 
+        .btn-black { background: #334155; color: #f8fafc; border: 1px solid #475569; } 
+        .btn-yellow { background: #ca8a04; } 
+        .btn-blue { background: #2563eb; }
+        .btn-reset { background: #7f1d1d; flex: 0.5; }
+
+
+        /* YATAY EKRAN: BÜYÜK TOPLAM GÖRÜNÜMÜ */
+        #bigTotals { display: none; }
+        body.landscape-view:not(.calc-mode) .header,
+        body.landscape-view:not(.calc-mode) .tabbar,
+        body.landscape-view:not(.calc-mode) .main-container { display: none; }
+        body.landscape-view:not(.calc-mode) #bigTotals {
+            display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0f172a; z-index: 100;
+        }
+        .big-cell { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 2px solid #0f172a; background: #1e293b; color: #fbbf24; }
+        .big-cell:last-child { border-right: none; }
+        .big-label { font-size: 4.5vw; color: #cbd5e1; font-weight: bold; margin-bottom: 1vw; max-width: 94%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .big-num { font-size: 11vw; font-weight: 900; line-height: 1; }
+        .big-num.long { font-size: 8.5vw; }
+        .big-cell.rank-1 { background: #16a34a; color: #fff; }
+        .big-cell.rank-2 { background: #eab308; color: #1f2937; }
+        .big-cell.rank-3 { background: #f87171; color: #fff; }
+        .big-cell.rank-4 { background: #991b1b; color: #fff; }
+        .big-cell.rank-2 .big-label { color: #374151; }
+        .big-cell.rank-1 .big-label, .big-cell.rank-3 .big-label, .big-cell.rank-4 .big-label { color: #f1f5f9; }
+        .penalty-grid { display: flex; gap: 6px; margin-bottom: 5px; }
+        .p-btn { flex: 1; padding: 12px 0; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .p-btn span { display: block; font-size: 9px; opacity: 0.9; font-weight: normal; }
+
+        /* BİLDİRİM */
+        #toast { display: none; position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: 90%; background: #0f172a; color: #fff; border: 1px solid #60a5fa; padding: 10px 14px; border-radius: 10px; font-size: 13px; text-align: center; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+        /* OKEY / ÇİFT BUTONLARI */
+        .special-grid { display: flex; gap: 6px; margin-top: 6px; }
+        .s-btn { flex: 1; padding: 8px 0; border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 3px 5px -1px rgba(0,0,0,0.3); }
+        .s-okey { background: #7c3aed; }
+        .s-cift { background: #0d9488; }
+
+        /* TAŞ YAPMA SIRASI */
+        .score-input.dealer { box-shadow: inset 0 0 0 3px #f59e0b; }
+        .score-input::placeholder { color: #fbbf24; opacity: 0.85; font-size: 16px; }
+        .dealer-row th { padding: 3px 0; font-size: 9px; color: #94a3b8; font-weight: normal; }
+        .dealer-pick { width: 80%; padding: 3px 0; border: none; border-radius: 6px; background: #334155; color: #94a3b8; font-size: 14px; }
+        .dealer-pick.on { background: #f59e0b; color: #1f2937; }
+
+        /* OYUNCU İSİMLERİ (başlık) */
+        .name-input { width: 92%; padding: 2px 0; background: transparent; border: none; border-bottom: 1px solid #334155; color: #93c5fd; font-weight: bold; font-size: 13px; text-align: center; outline: none; }
+        .name-input::placeholder { color: #93c5fd; opacity: 1; }
+        .name-input:focus { border-bottom-color: #60a5fa; }
+
+        /* SEKMELER */
+        .tabbar { display: flex; gap: 6px; padding: 6px 5px 0; }
+        .tab { flex: 1; padding: 12px 0; border: none; border-radius: 10px 10px 0 0; background: #1e293b; color: #94a3b8; font-weight: bold; font-size: 15px; border-bottom: 3px solid transparent; }
+        .tab.active { background: #334155; color: #fff; border-bottom-color: #60a5fa; }
+
+        /* HESAP SAYFASI */
+        .calc-page { display: none; padding: 5px 5px 24px; }
+        body.calc-mode .calc-page { display: block; }
+        body.calc-mode .main-container { display: none; }
+        .c-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-top: 8px; }
+        .c-title { font-size: 11px; color: #94a3b8; margin-bottom: 10px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .c-input { width: 100%; min-width: 0; padding: 10px 4px; border-radius: 6px; border: 2px solid transparent; background: #334155; color: white; text-align: center; font-weight: bold; font-size: 18px; outline: none; }
+        .c-input:focus { border-color: #60a5fa; background: #0f172a; }
+        .c-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+        .c-row label { font-size: 14px; color: #cbd5e1; }
+        .c-row .c-input { width: 90px; }
+        .c-players { display: flex; gap: 6px; }
+        .c-pl { flex: 1; min-width: 0; text-align: center; }
+        .c-name { width: 100%; min-width: 0; background: transparent; border: none; border-bottom: 1px solid #475569; color: #93c5fd; text-align: center; font-weight: bold; font-size: 14px; padding: 4px 0; margin-bottom: 6px; outline: none; }
+        .c-sub { font-size: 10px; color: #94a3b8; margin-top: 3px; }
+        .c-warn { color: #fca5a5; font-size: 13px; margin-top: 10px; text-align: center; }
+        .c-warn:empty { display: none; }
+        .c-info { color: #94a3b8; font-size: 12px; margin-top: 8px; text-align: center; }
+        .c-info:empty { display: none; }
+        .c-add { display: flex; gap: 4px; margin-bottom: 8px; }
+        .c-add .c-input { font-size: 15px; padding: 10px 2px; }
+        .c-add .f-name { flex: 2.2; }
+        .c-add .f-price { flex: 1.4; }
+        .c-add .f-qty { flex: 1; }
+        .c-addbtn { width: 48px; border: none; border-radius: 8px; background: #2563eb; color: white; font-size: 24px; font-weight: bold; }
+        .c-item { display: flex; align-items: center; gap: 6px; padding: 8px 2px; border-bottom: 1px solid #334155; font-size: 15px; }
+        .c-iname { flex: 1; min-width: 0; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .c-iexp { color: #93c5fd; font-weight: bold; white-space: nowrap; }
+        .c-iline { color: #fbbf24; font-weight: bold; min-width: 72px; text-align: right; white-space: nowrap; }
+        .c-del { background: #7f1d1d; border: none; color: white; border-radius: 6px; width: 30px; height: 30px; font-size: 14px; }
+        .c-empty { color: #64748b; text-align: center; font-size: 13px; padding: 10px 0; }
+        .c-total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 12px 10px; background: #0f172a; border-radius: 8px; border-top: 3px solid #fbbf24; color: #fbbf24; }
+        .c-total span { font-size: 13px; color: #fff; font-weight: bold; }
+        .c-total strong { font-size: 26px; font-weight: 900; }
+        .c-res { display: flex; align-items: center; padding: 12px 6px; border-bottom: 1px solid #334155; }
+        .c-res.zero { opacity: 0.45; }
+        .c-rname { flex: 1; min-width: 0; font-size: 18px; font-weight: bold; color: #93c5fd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .c-rfrac { width: 56px; text-align: center; color: #cbd5e1; font-size: 16px; }
+        .c-ramt { min-width: 100px; text-align: right; font-size: 22px; font-weight: 900; color: #fbbf24; white-space: nowrap; }
+        .c-sumrow { border-bottom: none; border-top: 2px solid #475569; margin-top: 4px; }
+        .c-sumrow .c-rname { color: #fff; font-size: 14px; }
+        .c-sumrow .c-ramt { font-size: 18px; color: #fff; }
+        .c-reset2 { background: #475569 !important; }
+        .c-reset { width: 100%; margin-top: 10px; padding: 14px; border: none; border-radius: 8px; background: #7f1d1d; color: white; font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div id="toast"></div>
+    <div class="header"><h3 style="margin:0; font-style:italic; color:#60a5fa;">PRO YAZBOZ MASTER+</h3></div>
+    <div class="tabbar">
+        <button class="tab active" id="tabScore" onclick="showTab('score')">🎯 PUAN</button>
+        <button class="tab" id="tabCalc" onclick="showTab('calc')">🧾 HESAP</button>
+    </div>
+
+    <div id="bigTotals">
+        <div class="big-cell" id="bigcell0"><div class="big-label" id="bigl0">P1</div><div class="big-num" id="big0">0</div></div>
+        <div class="big-cell" id="bigcell1"><div class="big-label" id="bigl1">P2</div><div class="big-num" id="big1">0</div></div>
+        <div class="big-cell" id="bigcell2"><div class="big-label" id="bigl2">P3</div><div class="big-num" id="big2">0</div></div>
+        <div class="big-cell" id="bigcell3"><div class="big-label" id="bigl3">P4</div><div class="big-num" id="big3">0</div></div>
+    </div>
+    
+    <div class="main-container">
+        <div class="top-controls">
+            <div class="penalty-label">Hızlı Ödül Girişi (- Puan)</div>
+            <div class="penalty-grid">
+                <button class="p-btn btn-red" onclick="applyPenalty(40)">-40<span>KIRMIZI</span></button>
+                <button class="p-btn btn-black" onclick="applyPenalty(50)">-50<span>SİYAH</span></button>
+                <button class="p-btn btn-yellow" onclick="applyPenalty(60)">-60<span>SARI</span></button>
+                <button class="p-btn btn-blue" onclick="applyPenalty(70)">-70<span>MAVİ</span></button>
+            </div>
+            <div class="special-grid">
+                <button class="s-btn s-okey" onclick="applySpecial('okey')">OKEY ATILDI ×10</button>
+                <button class="s-btn s-cift" onclick="applySpecial('cift')">ÇİFT BİTTİ ×20</button>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 18%;">No</th>
+                    <th style="width: 20.5%;"><input class="name-input" id="hName0" type="text" maxlength="8" placeholder="P1" oninput="nameChange(0,this)"></th>
+                    <th style="width: 20.5%;"><input class="name-input" id="hName1" type="text" maxlength="8" placeholder="P2" oninput="nameChange(1,this)"></th>
+                    <th style="width: 20.5%;"><input class="name-input" id="hName2" type="text" maxlength="8" placeholder="P3" oninput="nameChange(2,this)"></th>
+                    <th style="width: 20.5%;"><input class="name-input" id="hName3" type="text" maxlength="8" placeholder="P4" oninput="nameChange(3,this)"></th>
+                </tr>
+                <tr class="dealer-row">
+                    <th>İlk taş</th>
+                    <th><button class="dealer-pick" id="dp0" onclick="setDealer(0)">★</button></th>
+                    <th><button class="dealer-pick" id="dp1" onclick="setDealer(1)">★</button></th>
+                    <th><button class="dealer-pick" id="dp2" onclick="setDealer(2)">★</button></th>
+                    <th><button class="dealer-pick" id="dp3" onclick="setDealer(3)">★</button></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <script>
+                    for(let i=0; i<11; i++) {
+                        document.write(`<tr id="row-${i}">
+                            <td><div class="row-info"><strong>${i+1}</strong><button class="edit-btn" onclick="setEditRow(${i})">✍️</button></div></td>
+                            <td><input type="number" inputmode="numeric" class="score-input" id="r${i}p0" onfocus="setActive(0,${i})" oninput="calculateTotals()"></td>
+                            <td><input type="number" inputmode="numeric" class="score-input" id="r${i}p1" onfocus="setActive(1,${i})" oninput="calculateTotals()"></td>
+                            <td><input type="number" inputmode="numeric" class="score-input" id="r${i}p2" onfocus="setActive(2,${i})" oninput="calculateTotals()"></td>
+                            <td><input type="number" inputmode="numeric" class="score-input" id="r${i}p3" onfocus="setActive(3,${i})" oninput="calculateTotals()"></td>
+                        </tr>`);
+                    }
+                </script>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td class="total-label">GENEL<br>TOPLAM</td>
+                    <td id="tot0">0</td><td id="tot1">0</td><td id="tot2">0</td><td id="tot3">0</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="controls-wrapper">
+            <div class="penalty-label">Seçili Satırı Çarp ve Kilitle</div>
+            <div class="multi-btns">
+                <button class="btn btn-red" onclick="applyMulti(4)">4x</button>
+                <button class="btn btn-black" onclick="applyMulti(5)">5x</button>
+                <button class="btn btn-yellow" onclick="applyMulti(6)">6x</button>
+                <button class="btn btn-blue" onclick="applyMulti(7)">7x</button>
+                <button class="btn btn-reset" onclick="resetGame()">SİL</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="calc-page" id="calcPage">
+        <div class="c-card">
+            <div class="c-title">Oyun Bilgisi</div>
+            <div class="c-row">
+                <label for="cGames">Oynanan parti sayısı</label>
+                <input class="c-input" id="cGames" type="text" inputmode="numeric" placeholder="0" oninput="calcUpdate()">
+            </div>
+            <div class="c-players">
+            <div class="c-pl"><input class="c-name" id="cName0" type="text" maxlength="8" placeholder="P1" oninput="nameChange(0,this)"><input class="c-input" id="cLoss0" type="text" inputmode="numeric" placeholder="0" oninput="calcUpdate()"><div class="c-sub">yenilgi</div></div>
+            <div class="c-pl"><input class="c-name" id="cName1" type="text" maxlength="8" placeholder="P2" oninput="nameChange(1,this)"><input class="c-input" id="cLoss1" type="text" inputmode="numeric" placeholder="0" oninput="calcUpdate()"><div class="c-sub">yenilgi</div></div>
+            <div class="c-pl"><input class="c-name" id="cName2" type="text" maxlength="8" placeholder="P3" oninput="nameChange(2,this)"><input class="c-input" id="cLoss2" type="text" inputmode="numeric" placeholder="0" oninput="calcUpdate()"><div class="c-sub">yenilgi</div></div>
+            <div class="c-pl"><input class="c-name" id="cName3" type="text" maxlength="8" placeholder="P4" oninput="nameChange(3,this)"><input class="c-input" id="cLoss3" type="text" inputmode="numeric" placeholder="0" oninput="calcUpdate()"><div class="c-sub">yenilgi</div></div>
+            </div>
+            <div class="c-warn" id="cWarn"></div>
+            <div class="c-info" id="cInfo"></div>
+        </div>
+
+        <div class="c-card">
+            <div class="c-title">Harcamalar (Fiyat × Adet)</div>
+            <div class="c-add">
+                <input class="c-input f-name" id="cItemName" type="text" placeholder="Ürün" maxlength="20" oninput="persistSave()">
+                <input class="c-input f-price" id="cItemPrice" type="text" inputmode="decimal" placeholder="Fiyat" oninput="persistSave()">
+                <input class="c-input f-qty" id="cItemQty" type="text" inputmode="numeric" placeholder="Adet">
+                <button class="c-addbtn" onclick="calcAddItem()">+</button>
+            </div>
+            <div id="cItems"></div>
+            <div class="c-total"><span>TOPLAM HESAP</span><strong id="cTotal">0 ₺</strong></div>
+        </div>
+
+        <div class="c-card">
+            <div class="c-title">Ödeme Payları</div>
+            <div id="cResults"></div>
+        </div>
+
+        <button class="c-reset" onclick="calcReset()">HESABI SIFIRLA</button>
+        <button class="c-reset c-reset2" onclick="namesReset()">İSİMLERİ SİL</button>
+    </div>
+
+    <script>
+        let activeRow = 0;
+        let activePlayer = 0;
+        let locks = Array(11).fill(false);
+        let dealer = -1; // ilk taş yapan oyuncu (-1 = seçilmedi)
+        let gameCounted = false;  // 11 el bitti, parti ve yenilgiler hesap sayfasına yazıldı mı
+        let countedLosers = [];   // otomatik yenilgi yazılan oyuncular
+
+        function setActive(p, r) {
+            if(locks[r]) return;
+            activePlayer = p;
+            activeRow = r;
+            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
+            document.getElementById('row-' + r).classList.add('active-row');
+            if (window.persistSave) window.persistSave();
+        }
+
+        function setEditRow(idx) {
+            locks[idx] = false;
+            const row = document.getElementById('row-' + idx);
+            row.classList.remove('locked-row');
+            for(let p=0; p<4; p++){
+                document.getElementById(`r${idx}p${p}`).readOnly = false;
+            }
+            setActive(0, idx);
+            document.getElementById(`r${idx}p0`).focus();
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const totals = [];
+            for (let p = 0; p < 4; p++) {
+                let sum = 0;
+                for (let r = 0; r < 11; r++) {
+                    let inp = document.getElementById(`r${r}p${p}`);
+                    let v = parseInt(inp.value) || 0;
+                    sum += v;
+                    inp.classList.toggle('negative', v < 0);
+                }
+                document.getElementById('tot' + p).innerText = sum;
+                totals.push(sum);
+            }
+            colorTotals(totals);
+            checkGameComplete(totals);
+            if (window.persistSave) window.persistSave();
+        }
+
+        function colorTotals(totals) {
+            // Farklı değerleri küçükten büyüğe sırala (eşit puanlar aynı rengi alır)
+            const distinct = [...new Set(totals)].sort((a, b) => a - b);
+            for (let p = 0; p < 4; p++) {
+                const el = document.getElementById('tot' + p);
+                el.classList.remove('rank-1', 'rank-2', 'rank-3', 'rank-4');
+                // Herkes eşitse (ör. oyun başında) renk verme
+                const big = document.getElementById('bigcell' + p);
+                big.classList.remove('rank-1', 'rank-2', 'rank-3', 'rank-4');
+                if (distinct.length > 1) {
+                    const cls = 'rank-' + (distinct.indexOf(totals[p]) + 1);
+                    el.classList.add(cls);
+                    big.classList.add(cls);
+                }
+                const num = document.getElementById('big' + p);
+                num.innerText = totals[p];
+                num.classList.toggle('long', String(totals[p]).length >= 4);
+            }
+        }
+
+        // ---- YATAY EKRAN KONTROLÜ ----
+        function isLandscape() {
+            // Klavye açılınca pencere yüksekliği küçüldüğü için ekran yönü doğrudan sorulur
+            if (window.screen && screen.orientation && typeof screen.orientation.type === 'string') {
+                return screen.orientation.type.indexOf('landscape') === 0;
+            }
+            if (typeof window.orientation === 'number') {
+                return Math.abs(window.orientation) === 90;
+            }
+            return window.innerWidth > window.innerHeight && window.innerWidth > 600;
+        }
+
+        function updateOrientation() {
+            const land = isLandscape();
+            if (land && !document.body.classList.contains('landscape-view')) {
+                if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+            }
+            document.body.classList.toggle('landscape-view', land);
+        }
+
+        window.addEventListener('orientationchange', function () { setTimeout(updateOrientation, 200); });
+        window.addEventListener('resize', updateOrientation);
+        if (window.screen && screen.orientation && screen.orientation.addEventListener) {
+            screen.orientation.addEventListener('change', updateOrientation);
+        }
+        updateOrientation();
+
+        function lockRow(idx) {
+            locks[idx] = true;
+            const row = document.getElementById('row-' + idx);
+            row.classList.add('locked-row');
+            for(let p=0; p<4; p++){
+                document.getElementById(`r${idx}p${p}`).readOnly = true;
+            }
+        }
+
+        function rowFilled() {
+            for (let p = 0; p < 4; p++) {
+                if (document.getElementById(`r${activeRow}p${p}`).value.trim() === '') return false;
+            }
+            return true;
+        }
+
+        function applyMulti(m) {
+            if (locks[activeRow]) return alert("Bu satır kilitli!");
+            if (!rowFilled()) return alert("Çarpmadan önce tüm oyuncuların sayılarını girin (boş kutu kalmasın).");
+            let hasValue = false;
+            for (let p = 0; p < 4; p++) {
+                let inp = document.getElementById(`r${activeRow}p${p}`);
+                let v = parseInt(inp.value) || 0;
+                if (v > 0) {
+                    inp.value = v * m;
+                    hasValue = true;
+                }
+            }
+            if (hasValue) {
+                lockRow(activeRow);
+                calculateTotals();
+                if (activeRow < 10) setEditRow(activeRow + 1);
+            }
+        }
+
+        function applyPenalty(points) {
+            if (locks[activeRow]) return alert("Seçili satır kilitli! Önce ✍️ butonuna basarak açın.");
+            let targetInp = document.getElementById(`r${activeRow}p${activePlayer}`);
+            
+            if (targetInp.value !== "" && targetInp.value !== "0") {
+                if(!confirm("Bu hücrede zaten bir sayı var. Üzerine yazılsın mı?")) return;
+            }
+
+            targetInp.value = -Math.abs(points);
+            calculateTotals();
+        }
+
+        // Okey atıldı / çift çıkarıldı: kazananın ödülü 10x / 20x olur,
+        // diğerlerinin eldeki sayıları (renk çarpanı x 2) ile çarpılır, satır kilitlenir
+        function applySpecial(kind) {
+            if (locks[activeRow]) return alert("Bu satır kilitli!");
+            const colorMult = { 40: 4, 50: 5, 60: 6, 70: 7 };
+            let winner = -1, negCount = 0, winPoints = 0;
+            for (let p = 0; p < 4; p++) {
+                const v = parseInt(document.getElementById(`r${activeRow}p${p}`).value) || 0;
+                if (v < 0) { negCount++; winner = p; winPoints = -v; }
+            }
+            if (negCount !== 1 || !colorMult[winPoints]) {
+                return alert("Önce kazananın ödül puanını (-40, -50, -60 veya -70) girin, sonra diğerlerinin elindeki sayıları yazın.");
+            }
+            if (!rowFilled()) return alert("Çarpmadan önce tüm oyuncuların sayılarını girin (boş kutu kalmasın).");
+            const loserFactor = colorMult[winPoints] * 2;
+            const winFactor = (kind === 'okey') ? 10 : 20;
+            for (let p = 0; p < 4; p++) {
+                const inp = document.getElementById(`r${activeRow}p${p}`);
+                const v = parseInt(inp.value) || 0;
+                if (p === winner) inp.value = -(winPoints * winFactor);
+                else if (v > 0) inp.value = v * loserFactor;
+            }
+            lockRow(activeRow);
+            calculateTotals();
+            if (activeRow < 10) setEditRow(activeRow + 1);
+        }
+
+        // Taş yapma sırası: seçilen oyuncudan başlar, her satırda bir sonraki oyuncuya geçer
+        function renderDealer() {
+            for (let r = 0; r < 11; r++) {
+                for (let p = 0; p < 4; p++) {
+                    const inp = document.getElementById(`r${r}p${p}`);
+                    const isDealer = dealer >= 0 && ((dealer + r) % 4 === p);
+                    inp.classList.toggle('dealer', isDealer);
+                    inp.placeholder = isDealer ? '★' : '';
+                }
+            }
+            for (let p = 0; p < 4; p++) {
+                document.getElementById('dp' + p).classList.toggle('on', p === dealer);
+            }
+        }
+
+        function setDealer(p) {
+            dealer = (dealer === p) ? -1 : p;
+            renderDealer();
+            if (window.persistSave) window.persistSave();
+        }
+
+        function nameOf(p) {
+            return document.getElementById('hName' + p).value.trim() || ('P' + (p + 1));
+        }
+
+        function bumpField(id, d) {
+            const el = document.getElementById(id);
+            const n = Math.max(0, (parseInt(el.value) || 0) + d);
+            el.value = n === 0 ? '' : String(n);
+        }
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { t.style.display = 'none'; }, 7000);
+        }
+
+        // 11 satırın hepsi kilitlenince parti sayısı +1, en çok ceza puanı olan iki kişiye +1 yenilgi.
+        // Bir satır tekrar açılırsa (✍️) bu kayıt geri alınır, satır yeniden kilitlenince yeniden yazılır.
+        function checkGameComplete(totals) {
+            const complete = locks.every(Boolean);
+            if (complete && !gameCounted) {
+                gameCounted = true;
+                bumpField('cGames', 1);
+                // En kötü puan ve ikinci en kötü puan yenilir; ikinci kötüde eşitlik varsa
+                // eşit olan herkes de yenilmiş sayılır (ör. 100, 150, 150, 200 -> 3 kişi)
+                const order = [0, 1, 2, 3].sort(function (a, b) { return (totals[b] - totals[a]) || (a - b); });
+                const t2 = totals[order[1]];
+                const losers = [0, 1, 2, 3].filter(function (p) { return totals[p] >= t2; });
+                countedLosers = losers.slice();
+                losers.forEach(function (p) { bumpField('cLoss' + p, 1); });
+                if (window.calcUpdate) window.calcUpdate();
+                const games = parseInt(document.getElementById('cGames').value) || 0;
+                showToast("11. el bitti: parti sayısı " + games + " oldu. Yenilgi yazıldı: " + losers.map(nameOf).join(', ') +
+                          (losers.length > 2 ? " (eşitlik nedeniyle " + losers.length + " kişi)" : ""));
+            } else if (!complete && gameCounted) {
+                gameCounted = false;
+                bumpField('cGames', -1);
+                countedLosers.forEach(function (p) { bumpField('cLoss' + p, -1); });
+                countedLosers = [];
+                if (window.calcUpdate) window.calcUpdate();
+                showToast("Bir satır açıldığı için bu partinin parti/yenilgi kaydı geri alındı. Satırlar yeniden kilitlenince tekrar yazılır.");
+            }
+        }
+
+        function resetGame() {
+            if (confirm("Puanlar silinsin mi? (Oyuncu isimleri ve hesap bölümü silinmez)")) {
+                for (let r = 0; r < 11; r++) {
+                    locks[r] = false;
+                    document.getElementById('row-' + r).classList.remove('locked-row', 'active-row');
+                    for (let p = 0; p < 4; p++) {
+                        const inp = document.getElementById(`r${r}p${p}`);
+                        inp.value = '';
+                        inp.readOnly = false;
+                    }
+                }
+                activeRow = 0;
+                activePlayer = 0;
+                dealer = -1;
+                renderDealer();
+                gameCounted = false;   // biten parti hesap sayfasında kalır, geri alınmaz
+                countedLosers = [];
+                calculateTotals();
+            }
+        }
+    </script>
+
+    <script>
+    (function () {
+        var items = [];
+
+        function g(id) { return document.getElementById(id); }
+        function toNum(str) { var v = parseFloat(String(str).replace(',', '.')); return isNaN(v) ? 0 : v; }
+        function toInt(str) { var v = parseInt(str, 10); return (isNaN(v) || v < 0) ? 0 : v; }
+        function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        // kuruş -> "1.234,50" (tam sayıysa kuruşsuz)
+        function fmt(cents) {
+            var whole = Math.floor(cents / 100), frac = cents % 100;
+            var s = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            if (frac) s += ',' + (frac < 10 ? '0' : '') + frac;
+            return s;
+        }
+
+        // Toplamı hisselere böler; kuruş farkını en büyük kalana dağıtır, toplam tam tutar
+        function split(total, losses, den) {
+            var base = [], frac = [], given = 0, p;
+            for (p = 0; p < 4; p++) {
+                var n = total * losses[p];
+                base[p] = Math.floor(n / den);
+                frac[p] = n % den;
+                given += base[p];
+            }
+            var rem = total - given;
+            var order = [0, 1, 2, 3].sort(function (a, b) { return (frac[b] - frac[a]) || (a - b); });
+            for (var k = 0; k < rem; k++) base[order[k]]++;
+            return base;
+        }
+
+        function renderItems() {
+            var html = '', total = 0;
+            if (!items.length) html = '<div class="c-empty">Henüz ürün eklenmedi</div>';
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i], line = it.cents * it.qty;
+                total += line;
+                html += '<div class="c-item">' +
+                    '<div class="c-iname">' + esc(it.name || ('Ürün ' + (i + 1))) + '</div>' +
+                    '<div class="c-iexp">' + fmt(it.cents) + ' × ' + it.qty + '</div>' +
+                    '<div class="c-iline">= ' + fmt(line) + '</div>' +
+                    '<button class="c-del" onclick="calcDelItem(' + i + ')">✕</button></div>';
+            }
+            g('cItems').innerHTML = html;
+            return total;
+        }
+
+        function update() {
+            var total = renderItems();
+            g('cTotal').textContent = fmt(total) + ' ₺';
+
+            var games = toInt(g('cGames').value);
+            var losses = [], sum = 0, maxLoss = 0, p;
+            for (p = 0; p < 4; p++) {
+                var l = toInt(g('cLoss' + p).value);
+                losses.push(l); sum += l;
+                if (l > maxLoss) maxLoss = l;
+            }
+            var expected = games * 2, warn = '', info = '';
+            if (games > 0 && sum < expected) {
+                warn = 'Yenilgi toplamı ' + sum + ', ama ' + games + ' partide en az ' + expected + ' olmalı (her partide en az 2 kişi kaybeder). Kontrol et.';
+            } else if (games > 0 && maxLoss > games) {
+                warn = 'Bir oyuncu ' + games + ' partide en fazla ' + games + ' kez yenilebilir. Kontrol et.';
+            } else if (games > 0 && sum > expected) {
+                info = 'Eşitlik nedeniyle toplam yenilgi ' + sum + ' (' + games + ' partide normalde ' + expected + '). Paylar toplam yenilgiye göre bölünüyor.';
+            }
+            // Pay her zaman: oyuncunun yenilgisi / toplam yenilgi (eşitlikte 3 kişi yenilmişse toplam artar)
+            var den = sum;
+            g('cWarn').textContent = warn;
+            g('cInfo').textContent = info;
+
+            var html = '';
+            if (den === 0) {
+                html = '<div class="c-empty">Yenilgi sayılarını girin</div>';
+            } else {
+                var shares = split(total, losses, den), paid = 0;
+                for (p = 0; p < 4; p++) {
+                    paid += shares[p];
+                    var name = g('cName' + p).value.trim() || ('P' + (p + 1));
+                    html += '<div class="c-res' + (losses[p] ? '' : ' zero') + '">' +
+                        '<div class="c-rname">' + esc(name) + '</div>' +
+                        '<div class="c-rfrac">' + losses[p] + '/' + den + '</div>' +
+                        '<div class="c-ramt">' + fmt(shares[p]) + ' ₺</div></div>';
+                }
+                html += '<div class="c-res c-sumrow"><div class="c-rname">Toplam</div><div class="c-rfrac"></div>' +
+                    '<div class="c-ramt">' + fmt(paid) + ' ₺</div></div>';
+            }
+            g('cResults').innerHTML = html;
+            if (window.persistSave) window.persistSave();
+        }
+
+        window.calcUpdate = update;
+
+        // Oyuncu adı değişince başlık, hesap sayfası ve yatay görünüm birlikte güncellenir
+        window.nameChange = function (p, el) {
+            var val = el.value;
+            var ids = ['hName' + p, 'cName' + p];
+            for (var k = 0; k < ids.length; k++) {
+                var other = g(ids[k]);
+                if (other && other !== el && other.value !== val) other.value = val;
+            }
+            g('bigl' + p).textContent = val.trim() || ('P' + (p + 1));
+            update();
+        };
+
+        window.calcAddItem = function () {
+            var name = g('cItemName').value.trim();
+            var cents = Math.round(toNum(g('cItemPrice').value) * 100);
+            var qtyStr = g('cItemQty').value.trim();
+            var qty = (qtyStr === '') ? 1 : toInt(qtyStr);
+            if (cents <= 0) { g('cItemPrice').focus(); return; }
+            if (qty <= 0) { g('cItemQty').focus(); return; }
+            items.push({ name: name, cents: cents, qty: qty });
+            // Ürün adı ve fiyat sabit kalır, sadece adet temizlenir
+            g('cItemQty').value = '';
+            update();
+            g('cItemQty').focus();
+        };
+
+        window.calcDelItem = function (i) {
+            items.splice(i, 1);
+            update();
+        };
+
+        window.calcReset = function () {
+            if (!confirm('Hesap sıfırlansın mı? (Ürünler, parti ve yenilgi sayıları silinir; oyuncu isimleri kalır)')) return;
+            items = [];
+            g('cGames').value = '';
+            g('cItemName').value = '';
+            g('cItemPrice').value = '';
+            g('cItemQty').value = '';
+            for (var p = 0; p < 4; p++) g('cLoss' + p).value = '';
+            update();
+        };
+
+        window.namesReset = function () {
+            if (!confirm('Oyuncu isimleri silinsin mi?')) return;
+            for (var p = 0; p < 4; p++) {
+                var h = g('hName' + p);
+                h.value = '';
+                window.nameChange(p, h);
+            }
+        };
+
+        // Kalıcı kayıt için hesap bölümünün durumunu verir / geri yükler
+        window.calcGetState = function () {
+            var losses = [];
+            for (var p = 0; p < 4; p++) losses.push(g('cLoss' + p).value);
+            return { games: g('cGames').value, losses: losses, items: items,
+                     itemName: g('cItemName').value, itemPrice: g('cItemPrice').value };
+        };
+
+        window.calcSetState = function (c) {
+            if (!c) return;
+            var clean = [];
+            var src = c.items || [];
+            for (var i = 0; i < src.length; i++) {
+                var cents = Math.round(Number(src[i].cents)) || 0;
+                var qty = toInt(src[i].qty);
+                if (cents > 0 && qty > 0) clean.push({ name: String(src[i].name || ''), cents: cents, qty: qty });
+            }
+            items = clean;
+            g('cGames').value = c.games || '';
+            for (var p = 0; p < 4; p++) g('cLoss' + p).value = (c.losses && c.losses[p]) || '';
+            g('cItemName').value = c.itemName || '';
+            g('cItemPrice').value = c.itemPrice || '';
+            update();
+        };
+
+        window.showTab = function (t) {
+            var calc = (t === 'calc');
+            document.body.classList.toggle('calc-mode', calc);
+            g('tabScore').classList.toggle('active', !calc);
+            g('tabCalc').classList.toggle('active', calc);
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+            window.scrollTo(0, 0);
+        };
+
+        g('cItemQty').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') window.calcAddItem();
+        });
+
+        update();
+    })();
+    </script>
+
+    <script>
+    // KALICI KAYIT: sayfa yeniden yüklense de puan, isim ve hesap geri gelsin
+    (function () {
+        var KEY = 'yazboz_state_v2';
+        var ready = false, restoring = false, dirty = false, timer = null, appliedT = 0;
+
+        function g(id) { return document.getElementById(id); }
+
+        function hasBridge() {
+            try {
+                return !!(window.AppInventor &&
+                    typeof window.AppInventor.getWebViewString === 'function' &&
+                    typeof window.AppInventor.setWebViewString === 'function');
+            } catch (e) { return false; }
+        }
+
+        function collect() {
+            var vals = [], names = [], r, p;
+            for (r = 0; r < 11; r++) {
+                var row = [];
+                for (p = 0; p < 4; p++) row.push(g('r' + r + 'p' + p).value);
+                vals.push(row);
+            }
+            for (p = 0; p < 4; p++) names.push(g('hName' + p).value);
+            return { v: 2, t: Date.now(), vals: vals, locks: locks.slice(),
+                     activeRow: activeRow, activePlayer: activePlayer,
+                     names: names, dealer: dealer, counted: gameCounted, countedLosers: countedLosers, calc: window.calcGetState() };
+        }
+
+        function apply(st) {
+            restoring = true;
+            try {
+                var r, p;
+                for (r = 0; r < 11; r++) {
+                    locks[r] = false;
+                    g('row-' + r).classList.remove('locked-row');
+                    for (p = 0; p < 4; p++) {
+                        var inp = g('r' + r + 'p' + p);
+                        inp.value = st.vals[r][p];
+                        inp.readOnly = false;
+                    }
+                }
+                for (r = 0; r < 11; r++) { if (st.locks[r]) lockRow(r); }
+                activeRow = st.activeRow || 0;
+                activePlayer = st.activePlayer || 0;
+                setActive(activePlayer, activeRow);
+                for (p = 0; p < 4; p++) {
+                    var h = g('hName' + p);
+                    h.value = (st.names && st.names[p]) || '';
+                    window.nameChange(p, h);
+                }
+                dealer = (typeof st.dealer === 'number') ? st.dealer : -1;
+                renderDealer();
+                gameCounted = (typeof st.counted === 'boolean') ? st.counted : locks.every(Boolean);
+                countedLosers = Array.isArray(st.countedLosers) ? st.countedLosers.filter(function (x) { return x >= 0 && x < 4; }) : [];
+                window.calcSetState(st.calc);
+                calculateTotals();
+            } catch (e) { /* bozuk kayıt varsa yok say */ }
+            restoring = false;
+        }
+
+        function doSave() {
+            if (!ready || restoring) return;
+            var s;
+            try { s = JSON.stringify(collect()); } catch (e) { return; }
+            try { localStorage.setItem(KEY, s); } catch (e) {}
+            if (hasBridge()) {
+                try { window.AppInventor.setWebViewString(s); } catch (e) {}
+            }
+        }
+
+        window.persistSave = function () {
+            if (!ready || restoring) return;
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(doSave, 500);
+        };
+
+        function flush() {
+            if (timer) { clearTimeout(timer); timer = null; }
+            doSave();
+        }
+
+        document.addEventListener('input', function () { dirty = true; }, true);
+        document.addEventListener('click', function () { dirty = true; }, true);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') flush();
+        });
+        window.addEventListener('pagehide', flush);
+
+        // 1) Tarayıcı depolaması varsa hemen geri yükle
+        try {
+            var raw = localStorage.getItem(KEY);
+            if (raw) {
+                var ls = JSON.parse(raw);
+                if (ls && ls.v === 2) { apply(ls); appliedT = ls.t || 0; }
+            }
+        } catch (e) {}
+
+        // 2) App Inventor köprüsü varsa oradan da dene (TinyDB bloklarıyla birlikte çalışır)
+        if (!hasBridge()) {
+            ready = true;
+        } else {
+            var tries = 0;
+            (function poll() {
+                var done = false;
+                try {
+                    var rawB = window.AppInventor.getWebViewString();
+                    if (rawB) {
+                        var st = JSON.parse(rawB);
+                        if (st && st.v === 2) {
+                            if (!dirty && (st.t || 0) > appliedT) { apply(st); appliedT = st.t; }
+                            done = true;
+                        }
+                    }
+                } catch (e) {}
+                tries++;
+                if (done || tries >= 12) { ready = true; window.persistSave(); }
+                else setTimeout(poll, 300);
+            })();
+        }
+    })();
+    </script>
+</body>
+</html>
