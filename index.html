@@ -72,6 +72,8 @@
         .big-label { font-size: 4.5vw; color: #cbd5e1; font-weight: bold; margin-bottom: 1vw; max-width: 94%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .big-num { font-size: 11vw; font-weight: 900; line-height: 1; }
         .big-num.long { font-size: 8.5vw; }
+        .big-gap { display: flex; flex-direction: column; align-items: center; margin-top: 1.5vw; min-height: 8.4vw; }
+        .big-gap-line { font-size: 2.3vw; line-height: 1.25; padding: 0.3vw 1.2vw; margin-bottom: 0.6vw; border-radius: 1.2vw; background: rgba(0,0,0,0.28); color: #fff; font-weight: normal; white-space: nowrap; }
         .big-cell.rank-1 { background: #16a34a; color: #fff; }
         .big-cell.rank-2 { background: #eab308; color: #1f2937; }
         .big-cell.rank-3 { background: #f87171; color: #fff; }
@@ -81,17 +83,6 @@
         .penalty-grid { display: flex; gap: 6px; margin-bottom: 5px; }
         .p-btn { flex: 1; padding: 12px 0; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
         .p-btn span { display: block; font-size: 9px; opacity: 0.9; font-weight: normal; }
-
-        /* 10. EL ÖZET PENCERESİ */
-        #infoModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 300; align-items: center; justify-content: center; }
-        .im-card { width: 90%; max-width: 420px; max-height: 92%; overflow-y: auto; background: #1e293b; border: 2px solid #fbbf24; border-radius: 14px; padding: 16px; }
-        .im-title { color: #fbbf24; font-weight: 900; font-size: 17px; text-align: center; margin-bottom: 12px; }
-        .im-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; font-size: 15px; color: #e2e8f0; }
-        .im-row strong { color: #fff; font-size: 18px; white-space: nowrap; }
-        .im-row.gap strong { color: #fbbf24; }
-        .im-sep { border-top: 1px solid #475569; margin: 6px 0; }
-        .im-note { color: #94a3b8; font-size: 12px; text-align: center; margin-top: 8px; }
-        .im-ok { width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 8px; background: #2563eb; color: white; font-weight: bold; font-size: 15px; }
 
         /* BİLDİRİM */
         #toast { display: none; position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: 90%; background: #0f172a; color: #fff; border: 1px solid #60a5fa; padding: 10px 14px; border-radius: 10px; font-size: 13px; text-align: center; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
@@ -104,7 +95,6 @@
 
         /* TAŞ YAPMA SIRASI */
         .score-input.dealer { box-shadow: inset 0 0 0 3px #f59e0b; }
-        .score-input::placeholder { color: #fbbf24; opacity: 0.85; font-size: 16px; }
         .dealer-row th { padding: 3px 0; font-size: 9px; color: #94a3b8; font-weight: normal; }
         .dealer-pick { width: 80%; padding: 3px 0; border: none; border-radius: 6px; background: #334155; color: #94a3b8; font-size: 14px; }
         .dealer-pick.on { background: #f59e0b; color: #1f2937; }
@@ -167,7 +157,6 @@
 </head>
 <body>
     <div id="toast"></div>
-    <div id="infoModal"><div class="im-card"><div class="im-title">10. EL BİTTİ</div><div id="imBody"></div><button class="im-ok" onclick="closeInfo()">TAMAM</button></div></div>
     <div class="header"><h3 style="margin:0; font-style:italic; color:#60a5fa;">PRO YAZBOZ MASTER+</h3></div>
     <div class="tabbar">
         <button class="tab active" id="tabScore" onclick="showTab('score')">🎯 PUAN</button>
@@ -175,10 +164,10 @@
     </div>
 
     <div id="bigTotals">
-        <div class="big-cell" id="bigcell0"><div class="big-label" id="bigl0">P1</div><div class="big-num" id="big0">0</div></div>
-        <div class="big-cell" id="bigcell1"><div class="big-label" id="bigl1">P2</div><div class="big-num" id="big1">0</div></div>
-        <div class="big-cell" id="bigcell2"><div class="big-label" id="bigl2">P3</div><div class="big-num" id="big2">0</div></div>
-        <div class="big-cell" id="bigcell3"><div class="big-label" id="bigl3">P4</div><div class="big-num" id="big3">0</div></div>
+        <div class="big-cell" id="bigcell0"><div class="big-label" id="bigl0">P1</div><div class="big-num" id="big0">0</div><div class="big-gap" id="biggap0"></div></div>
+        <div class="big-cell" id="bigcell1"><div class="big-label" id="bigl1">P2</div><div class="big-num" id="big1">0</div><div class="big-gap" id="biggap1"></div></div>
+        <div class="big-cell" id="bigcell2"><div class="big-label" id="bigl2">P3</div><div class="big-num" id="big2">0</div><div class="big-gap" id="biggap2"></div></div>
+        <div class="big-cell" id="bigcell3"><div class="big-label" id="bigl3">P4</div><div class="big-num" id="big3">0</div><div class="big-gap" id="biggap3"></div></div>
     </div>
     
     <div class="main-container">
@@ -348,6 +337,22 @@
                 const num = document.getElementById('big' + p);
                 num.innerText = totals[p];
                 num.classList.toggle('long', String(totals[p]).length >= 4);
+                // Kırmızı (3. ve 4. renk) oyuncuların sarıya (2. en düşük puan) olan farkı
+                // En kötü (koyu kırmızı) oyuncuda ayrıca açık kırmızıya olan fark da görünür
+                const gap = document.getElementById('biggap' + p);
+                const rk = distinct.indexOf(totals[p]) + 1;
+                const lines = [];
+                if (distinct.length >= 3 && rk >= 3) {
+                    lines.push('sarıya +' + (totals[p] - distinct[1]));
+                    if (rk === 4) lines.push('açık kırmızıya +' + (totals[p] - distinct[2]));
+                }
+                gap.textContent = '';
+                lines.forEach(function (t) {
+                    const line = document.createElement('div');
+                    line.className = 'big-gap-line';
+                    line.textContent = t;
+                    gap.appendChild(line);
+                });
             }
         }
 
@@ -407,11 +412,9 @@
                 }
             }
             if (hasValue) {
-                const lockedRow = activeRow;
                 lockRow(activeRow);
                 calculateTotals();
                 if (activeRow < 10) setEditRow(activeRow + 1);
-                if (lockedRow === 9) showTenthSummary();
             }
         }
 
@@ -449,11 +452,9 @@
                 if (p === winner) inp.value = -(winPoints * winFactor);
                 else if (v > 0) inp.value = v * loserFactor;
             }
-            const lockedRow = activeRow;
             lockRow(activeRow);
             calculateTotals();
             if (activeRow < 10) setEditRow(activeRow + 1);
-            if (lockedRow === 9) showTenthSummary();
         }
 
         // Taş yapma sırası: seçilen oyuncudan başlar, her satırda bir sonraki oyuncuya geçer
@@ -463,7 +464,6 @@
                     const inp = document.getElementById(`r${r}p${p}`);
                     const isDealer = dealer >= 0 && ((dealer + r) % 4 === p);
                     inp.classList.toggle('dealer', isDealer);
-                    inp.placeholder = isDealer ? '★' : '';
                 }
             }
             for (let p = 0; p < 4; p++) {
@@ -522,56 +522,6 @@
                 if (window.calcUpdate) window.calcUpdate();
                 showToast("Bir satır açıldığı için bu partinin parti/yenilgi kaydı geri alındı. Satırlar yeniden kilitlenince tekrar yazılır.");
             }
-        }
-
-        function closeInfo() {
-            document.getElementById('infoModal').style.display = 'none';
-        }
-
-        // 10. el kilitlenince: en kötü / 2. en kötü / 3. en kötü oyuncular ve aralarındaki puan farkları
-        function showTenthSummary() {
-            const totals = [];
-            for (let p = 0; p < 4; p++) {
-                let sum = 0;
-                for (let r = 0; r < 11; r++) sum += parseInt(document.getElementById(`r${r}p${p}`).value) || 0;
-                totals.push(sum);
-            }
-            const order = [0, 1, 2, 3].sort(function (a, b) { return (totals[b] - totals[a]) || (a - b); });
-            const A = order[0], B = order[1], C = order[2];
-            const rows = [
-                ['En kötü: ' + nameOf(A), totals[A], false],
-                ['2. en kötü: ' + nameOf(B), totals[B], false],
-                ['3. en kötü: ' + nameOf(C), totals[C], false],
-                null,
-                ['1. ile 2. fark (' + nameOf(A) + ' − ' + nameOf(B) + ')', totals[A] - totals[B], true],
-                ['2. ile 3. fark (' + nameOf(B) + ' − ' + nameOf(C) + ')', totals[B] - totals[C], true],
-                ['1. ile 3. fark (' + nameOf(A) + ' − ' + nameOf(C) + ')', totals[A] - totals[C], true]
-            ];
-            const body = document.getElementById('imBody');
-            body.textContent = '';
-            rows.forEach(function (r) {
-                if (r === null) {
-                    const sep = document.createElement('div');
-                    sep.className = 'im-sep';
-                    body.appendChild(sep);
-                    return;
-                }
-                const row = document.createElement('div');
-                row.className = 'im-row' + (r[2] ? ' gap' : '');
-                const label = document.createElement('span');
-                label.textContent = r[0];
-                const val = document.createElement('strong');
-                val.textContent = r[1];
-                row.appendChild(label);
-                row.appendChild(val);
-                body.appendChild(row);
-            });
-            const note = document.createElement('div');
-            note.className = 'im-note';
-            note.textContent = 'Geriye 1 el kaldı.';
-            body.appendChild(note);
-            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-            document.getElementById('infoModal').style.display = 'flex';
         }
 
         function resetGame() {
